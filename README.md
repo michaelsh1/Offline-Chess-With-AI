@@ -1,6 +1,6 @@
-# Chess With AI
+# Offline Chess With AI
  
-# MIT License
+## MIT License
 ```
 MIT License
 
