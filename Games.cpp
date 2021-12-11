@@ -307,14 +307,13 @@ game_outcomes Games::AI(sf::RenderWindow &window)
                               4, "Queen", "Rook", "Bishop", "Knight");
     
     ArtInt computer_move;
-    int computer_player = (std::rand() % 2);
+    // int computer_player = (std::rand() % 2);
+    int computer_player = 0;
 
     bool white_up = (computer_player == 0 ? false : true);
     Board board;
 
     // setup a board
-    // "8/p7/1p3kb1/8/P3P3/6p1/5pP1/4rR1K w - - 0 1"
-    // "2r1k2r/ppp2ppp/2bb1n2/8/2B5/2P2N2/PP3PPP/RNB1R1K1 b - - 0 1"
     board.setFEN(START_FEN);
     board.printBoard();
 
@@ -330,6 +329,10 @@ game_outcomes Games::AI(sf::RenderWindow &window)
     sf::Mouse mouse;
 
     std::list<move::MoveCell> move_lst;
+
+    // open game log
+    std::ofstream gamelog;
+    gamelog.open("game_log.txt");
 
     while (window.isOpen())
     {
@@ -481,6 +484,7 @@ game_outcomes Games::AI(sf::RenderWindow &window)
                                 break;
                             }
                             std::cout << "player: " << move << std::endl;
+                            gamelog << "player: " << move << "\n";
                         }
                     }
                     break;
@@ -500,7 +504,7 @@ game_outcomes Games::AI(sf::RenderWindow &window)
 
             int promote_to;
             auto start = high_resolution_clock::now();
-            auto comp_move = computer_move.generateComputerMove(board, promote_to, 3);
+            auto comp_move = computer_move.generateComputerMove(board, promote_to, 4);
             auto stop = high_resolution_clock::now();
             auto duration = duration_cast<milliseconds>(stop - start);
             std::cout << "time: " << (float)(duration.count() / 1000.0) << "s" << std::endl;
@@ -512,7 +516,14 @@ game_outcomes Games::AI(sf::RenderWindow &window)
                 std::cout <<  "computer: " << comp_move.move << std::endl;
 
                 board.isGameOver(outcome);
+
+                gamelog << "computer: " << comp_move.move << "\n";
+
+                // board
             }
         }
+
     }
+
+    gamelog.close();
 }

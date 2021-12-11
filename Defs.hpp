@@ -173,7 +173,7 @@ static bool loadFont(sf::Font &font, const char *filePath)
 }
 
 // ---------------------------macros--------------------------- //
-#define INFINITY std::numeric_limits<int>::max()
+#define INFINITY 10000
 
 // ---------------------------externs--------------------------- //
 static sf::Font VarelaRound, SourceSans;

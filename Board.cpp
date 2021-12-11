@@ -87,161 +87,161 @@ void Board::setFEN(const char *FEN)
 // true if successful false if not
 bool Board::movePiece(char move[5], std::list<move::MoveCell> *move_list, move::MoveType &move_type, int promote_to)
 {
-    auto mve = move::MoveCell::returnMoveVec(move);
+auto mve = move::MoveCell::returnMoveVec(move);
 
-    auto moves_list = calculateMoveList(mve.sq1);
+auto moves_list = calculateMoveList(mve.sq1);
 
-    int piece = Square[mve.sq1];
+int piece = Square[mve.sq1];
 
-    auto it = moves_list->begin();
-    while (it != moves_list->end())
+auto it = moves_list->begin();
+while (it != moves_list->end())
+{
+    if (move::cmpMove(move, it->move) == true)
     {
-        if (move::cmpMove(move, it->move) == true)
+        // increase fifty move rule
+        fifty_move_rule++;
+        if (it->type == move::take)
+            fifty_move_rule = 0;
+        // set move type (changeable)
+        move_type = it->type;
+
+        Square[mve.sq1] = PieceType::none;
+        Square[mve.sq2] = piece;
+
+        // change en passant square to nothing
+        en_passant_square = loc::ER;
+
+        // pawn stuff
+        // set correct en passant square
+        if ((piece & PieceType::piece_mask) == PieceType::pawn)
         {
-            // increase fifty move rule
-            fifty_move_rule++;
-            if (it->type == move::take)
-                fifty_move_rule = 0;
-            // set move type (changeable)
-            move_type = it->type;
+            // if pawn moved than fifty move rule resets
+            fifty_move_rule = 0;
 
-            Square[mve.sq1] = PieceType::none;
-            Square[mve.sq2] = piece;
-
-            // change en passant square to nothing
-            en_passant_square = loc::ER;
-
-            // pawn stuff
-            // set correct en passant square
-            if ((piece & PieceType::piece_mask) == PieceType::pawn)
+            switch (piece & PieceType::color_mask)
             {
-                // if pawn moved than fifty move rule resets
-                fifty_move_rule = 0;
+                case PieceType::black:
+                    if ((mve.sq1 - 16) == mve.sq2)
+                        en_passant_square = loc::Square64(mve.sq1 - 8);
+                    break;
+                case PieceType::white:
+                    if ((mve.sq1 + 16) == mve.sq2)
+                        en_passant_square = loc::Square64(mve.sq1 + 8);
+                    break;
+            }
 
+            // remove pawn taken by en passant
+            if (it->type == move::en_passant)
+            {
                 switch (piece & PieceType::color_mask)
                 {
                     case PieceType::black:
-                        if ((mve.sq1 - 16) == mve.sq2)
-                            en_passant_square = loc::Square64(mve.sq1 - 8);
+                        Square[mve.sq2 + 8] = PieceType::none;
                         break;
                     case PieceType::white:
-                        if ((mve.sq1 + 16) == mve.sq2)
-                            en_passant_square = loc::Square64(mve.sq1 + 8);
+                        Square[mve.sq2 - 8] = PieceType::none;
                         break;
                 }
-
-                // remove pawn taken by en passant
-                if (it->type == move::en_passant)
-                {
-                    switch (piece & PieceType::color_mask)
-                    {
-                        case PieceType::black:
-                            Square[mve.sq2 + 8] = PieceType::none;
-                            break;
-                        case PieceType::white:
-                            Square[mve.sq2 - 8] = PieceType::none;
-                            break;
-                    }
-                }
-
-                // promotion
-                // black pawn promotion
-                if ((mve.sq2 / 8) == loc::RANK_1)
-                {
-                    Square[mve.sq2] = (PieceType::black | promote_to);
-                    move_type = move::promote;
-                }
-                // white pawn promotion
-                else if ((mve.sq2 / 8) == loc::RANK_8)
-                {
-                    Square[mve.sq2] = (PieceType::white | promote_to);
-                    move_type = move::promote;
-                }
             }
-            // no reason to check for castlig related move if not king or rook
-            else if ((piece & PieceType::piece_mask) == PieceType::king ||
-                     (piece & PieceType::piece_mask) == PieceType::rook)
+
+            // promotion
+            // black pawn promotion
+            if ((mve.sq2 / 8) == loc::RANK_1)
             {
-                // castling stuff
-                // deal with castling rights
-                if ((rights & ~1) != 0) // if any castling rights left
-                {
-                    if ((piece & PieceType::piece_mask) == PieceType::king)
-                    {
-                        if ((piece & PieceType::color_mask) == PieceType::white)
-                        {
-                            rights &= ~Rights::king_side_white;
-                            rights &= ~Rights::queen_side_white;
-                        }
-                        else
-                        {
-                            rights &= ~Rights::king_side_black;
-                            rights &= ~Rights::queen_side_black;
-                        }
-                    }
-                    else if ((piece & PieceType::piece_mask) == PieceType::rook)
-                    {
-                        if ((piece & PieceType::color_mask) == PieceType::white)
-                        {
-                            if (mve.sq1 == loc::h1)
-                                rights &= ~Rights::king_side_white;
-                            else if (mve.sq1 == loc::a1)
-                                rights &= ~Rights::queen_side_white;
-                        }
-                        else
-                        {
-                            if (mve.sq1 == loc::h8)
-                                rights &= ~Rights::king_side_black;
-                            else if (mve.sq1 == loc::a8)
-                                rights &= ~Rights::queen_side_black;
-                        }
-                    }
-                    if ((Square[mve.sq2] & PieceType::piece_mask) == PieceType::rook)
-                    {
-                        if ((Square[mve.sq2] & PieceType::color_mask) == PieceType::white)
-                        {
-                            if (mve.sq1 == loc::h1)
-                                rights &= ~Rights::king_side_white;
-                            else if (mve.sq2 == loc::a1)
-                                rights &= ~Rights::queen_side_white;
-                        }
-                        else
-                        {
-                            if (mve.sq2 == loc::h8)
-                                rights &= ~Rights::king_side_black;
-                            else if (mve.sq2 == loc::a8)
-                                rights &= ~Rights::queen_side_black;
-                        }
-                    }
-                }
-                
-                // deal with a castles move
-                // gotta make sure we are dealing with a king, not a rook
+                Square[mve.sq2] = (PieceType::black | promote_to);
+                move_type = move::promote;
+            }
+            // white pawn promotion
+            else if ((mve.sq2 / 8) == loc::RANK_8)
+            {
+                Square[mve.sq2] = (PieceType::white | promote_to);
+                move_type = move::promote;
+            }
+        }
+        // no reason to check for castlig related move if not king or rook
+        else if ((piece & PieceType::piece_mask) == PieceType::king ||
+                    (piece & PieceType::piece_mask) == PieceType::rook)
+        {
+            // castling stuff
+            // deal with castling rights
+            if ((rights & ~1) != 0) // if any castling rights left
+            {
                 if ((piece & PieceType::piece_mask) == PieceType::king)
                 {
-                    // king side castles
-                    if (mve.sq1 + 2 == mve.sq2)
+                    if ((piece & PieceType::color_mask) == PieceType::white)
                     {
-                        Square[mve.sq1 + 1] = Square[mve.sq1 + 3];
-                        Square[mve.sq1 + 3] = PieceType::none;
+                        rights &= ~Rights::king_side_white;
+                        rights &= ~Rights::queen_side_white;
                     }
-                    // queen side castles
-                    else if (mve.sq1 - 2 == mve.sq2)
+                    else
                     {
-                        Square[mve.sq1 - 1] = Square[mve.sq1 - 4];
-                        Square[mve.sq1 - 4] = PieceType::none;
+                        rights &= ~Rights::king_side_black;
+                        rights &= ~Rights::queen_side_black;
+                    }
+                }
+                else if ((piece & PieceType::piece_mask) == PieceType::rook)
+                {
+                    if ((piece & PieceType::color_mask) == PieceType::white)
+                    {
+                        if (mve.sq1 == loc::h1)
+                            rights &= ~Rights::king_side_white;
+                        else if (mve.sq1 == loc::a1)
+                            rights &= ~Rights::queen_side_white;
+                    }
+                    else
+                    {
+                        if (mve.sq1 == loc::h8)
+                            rights &= ~Rights::king_side_black;
+                        else if (mve.sq1 == loc::a8)
+                            rights &= ~Rights::queen_side_black;
+                    }
+                }
+                if ((Square[mve.sq2] & PieceType::piece_mask) == PieceType::rook)
+                {
+                    if ((Square[mve.sq2] & PieceType::color_mask) == PieceType::white)
+                    {
+                        if (mve.sq1 == loc::h1)
+                            rights &= ~Rights::king_side_white;
+                        else if (mve.sq2 == loc::a1)
+                            rights &= ~Rights::queen_side_white;
+                    }
+                    else
+                    {
+                        if (mve.sq2 == loc::h8)
+                            rights &= ~Rights::king_side_black;
+                        else if (mve.sq2 == loc::a8)
+                            rights &= ~Rights::queen_side_black;
                     }
                 }
             }
             
-            // change turn
-            rights = ((rights & 1) == 1) ? (rights - 1) : (rights + 1);
-
-            return true;
+            // deal with a castles move
+            // gotta make sure we are dealing with a king, not a rook
+            if ((piece & PieceType::piece_mask) == PieceType::king)
+            {
+                // king side castles
+                if (mve.sq1 + 2 == mve.sq2)
+                {
+                    Square[mve.sq1 + 1] = Square[mve.sq1 + 3];
+                    Square[mve.sq1 + 3] = PieceType::none;
+                }
+                // queen side castles
+                else if (mve.sq1 - 2 == mve.sq2)
+                {
+                    Square[mve.sq1 - 1] = Square[mve.sq1 - 4];
+                    Square[mve.sq1 - 4] = PieceType::none;
+                }
+            }
         }
-        it++;
+        
+        // change turn
+        rights = ((rights & 1) == 1) ? (rights - 1) : (rights + 1);
+
+        return true;
     }
-    return false;
+    it++;
+}
+return false;
 }
 
 std::list<move::MoveCell> *Board::calculateMoveList(loc::Square64 square)

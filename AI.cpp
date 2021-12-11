@@ -290,7 +290,7 @@ int ArtInt::negaMax(Board &board, int depth, int alpha, int beta)
 
     game_outcomes outcome = _ERROR;
     Evaluate e;
-    if (board.isGameOver(outcome) || depth < 1)
+    if (board.isGameOver(outcome) || depth <= 1)
         return e.evaluate(board, outcome, depth);
 
     std::list<move::MoveCell> moves_list;
@@ -323,7 +323,8 @@ int ArtInt::negaMax(Board &board, int depth, int alpha, int beta)
 
                 if (beta <= alpha)
                 {
-                    position_stack.pop();
+                    if(!position_stack.empty())
+                        position_stack.pop();
                     return beta;
                 }
             }
@@ -334,6 +335,8 @@ int ArtInt::negaMax(Board &board, int depth, int alpha, int beta)
             alpha = std::max(alpha, -negaMax(board, depth - 1, -beta, -alpha));
             board = position_stack.top();
         }
+
+        // board.printBoard();
 
         if (beta <= alpha)
         {
@@ -380,6 +383,7 @@ move::MoveCell ArtInt::generateComputerMove(Board board, int &promote_to, int de
     {
         if (it->type == move::promote)
         {
+
             // iterating from queen to knight
             for (int i = PieceType::queen; i >= PieceType::knight; i--)
             {
