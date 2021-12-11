@@ -307,8 +307,7 @@ game_outcomes Games::AI(sf::RenderWindow &window)
                               4, "Queen", "Rook", "Bishop", "Knight");
     
     ArtInt computer_move;
-    // int computer_player = (std::rand() % 2);
-    int computer_player = 0;
+    int computer_player = (std::rand() % 2);
 
     bool white_up = (computer_player == 0 ? false : true);
     Board board;
