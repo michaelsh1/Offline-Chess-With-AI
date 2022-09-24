@@ -10,7 +10,7 @@ CFLAGS  = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 TARGET = chess
 
 make: *.cpp
-	$(cc) -c ./build *.cpp 
+	$(cc) -c *.cpp 
 	$(cc) -o $(TARGET) *.o $(CFLAGS) 
 
 run: make
